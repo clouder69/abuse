@@ -1,0 +1,68 @@
+#!/bin/bash
+
+> abuse.txt
+> abuse.html
+
+touch check.txt
+
+while read ip; do
+
+  ip=$(echo "${ip%%:*}")
+
+  is=$(cat check.txt | grep $ip)
+
+  echo "# Scanning $ip"
+
+  if [ ! -z "$is" -a "$is" != " " ]; then
+
+    echo "- IP $ip was already checked"
+
+  else
+
+    content=$(wget https://www.abuseipdb.com/check/$ip -q -O -)
+    was=$(echo $content | grep -o "was.*found")
+
+    if [[ $was != *"not"* ]];
+    then
+
+      x=$(echo $content | grep -o "reported <b>.*</b> times" | cut -f1 -d".")
+      x=$(echo $x | sed 's/[^0-9]*//g')
+
+      echo "+ IP $ip reported $x times [Abuse]"
+      echo "$ip - $x times" >> abuse.txt
+      echo "<a href=\"https://www.abuseipdb.com/check/$ip\" target=\"blank_\"><p style=\"color: red;\">$ip</p></a>" >> abuse.html
+
+    else
+
+      cymon=$(wget https://cymon.io/$ip -q -O -)
+
+      f=$(echo $cymon | grep -o "Not Found")
+
+      if [[ $f != *"Not Found"* ]];
+      then
+
+        x=$(echo $cymon | grep -o "There are .* security events" | cut -f1 -d".")
+        x=$(echo $x | sed 's/[^0-9]*//g')
+
+	echo "+ IP $ip reported $x times [Cymon]"
+        echo "$ip - $x times" >> abuse.txt
+        echo "<a href=\"https://cymon.io/$ip\" target=\"blank_\"><p style=\"color: red;\">$ip</p></a>" >> abuse.html
+
+      else
+
+        echo "$ip" >> don.txt
+        echo "<p>$ip</p>" >> abuse.html
+
+      fi
+
+    fi
+
+  fi
+
+  echo " "
+  echo $ip >> check.txt
+
+done <log.txt
+
+rm check.txt
+#> log.txt
