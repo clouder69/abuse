@@ -4,6 +4,11 @@
 > abuse.html
 
 touch check.txt
+touch tmp.txt
+
+sed '/^\s*$/d' log.txt > tmp.txt
+cat tmp.txt > log.txt
+rm tmp.txt
 
 while read ip; do
 
